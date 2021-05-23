@@ -1,0 +1,201 @@
+table variable -> table에게 네임을 부여해서 쿼리내에서 table대신 이름으로 사용가능
+set operator -> union, except(차집합), intersect
+distinct로 중복을 없앰
+union은 기본적으로 결과물에 중복값을 없애며 오름차순으로 정렬한다. 정렬되지않으며 중복값을 없애지않도록 하려면 union all이라고 작성한다.
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SQL 1)
+SELECT S.Sid , sName, GPA, A.cName, enr
+FROM Student S, College C, Apply A
+WHERE A.Sid = S.Sid and A.cName = C.cName
+
+
+결과)
+123	Amy	3.9	Stanford	15000
+123	Amy	3.9	Stanford	15000
+123	Amy	3.9	Berkeley	35000
+123	Amy	3.9	Cornell	21000
+234	Bob	3.6	Berkeley	35000
+345	Craig	3.5	MIT	10000
+345	Craig	3.5	Cornell	21000
+345	Craig	3.5	Cornell	21000
+345	Craig	3.5	Cornell	21000
+678	Fay	3.8	Stanford	15000
+987	Helen	3.7	Stanford	15000
+987	Helen	3.7	Berkeley	35000
+876	Irene	3.9	Stanford	15000
+876	Irene	3.9	MIT	10000
+876	Irene	3.9	MIT	10000
+765	Jay	2.9	Stanford	15000
+765	Jay	2.9	Cornell	21000
+765	Jay	2.9	Cornell	21000
+543	Craig	3.4	MIT	10000
+
+
+
+포인트)
+From (테이블) (변수 명)을 명령하면 변수에 테이블이 삽입되어 변수로 동일한 테이블을 사용할 수 있게된다.
+
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SQL 2)
+SELECT S1.Sid, S1.sName, S1.GPA, S2.Sid, S2.sName, S2.GPA
+FROM Student S1, Student S2
+WHERE S1.GPA = S2.GPA
+
+
+결과)
+123	Amy	3.9	123	Amy	3.9
+123	Amy	3.9	654	Amy	3.9
+123	Amy	3.9	456	Doris	3.9
+123	Amy	3.9	876	Irene	3.9
+234	Bob	3.6	234	Bob	3.6
+345	Craig	3.5	345	Craig	3.5
+456	Doris	3.9	123	Amy	3.9
+456	Doris	3.9	654	Amy	3.9
+456	Doris	3.9	456	Doris	3.9
+456	Doris	3.9	876	Irene	3.9
+543	Craig	3.4	543	Craig	3.4
+543	Craig	3.4	789	Gary	3.4
+567	Edward	2.9	567	Edward	2.9
+567	Edward	2.9	765	Jay	2.9
+654	Amy	3.9	123	Amy	3.9
+654	Amy	3.9	654	Amy	3.9
+654	Amy	3.9	456	Doris	3.9
+654	Amy	3.9	876	Irene	3.9
+678	Fay	3.8	678	Fay	3.8
+765	Jay	2.9	567	Edward	2.9
+765	Jay	2.9	765	Jay	2.9
+789	Gary	3.4	543	Craig	3.4
+789	Gary	3.4	789	Gary	3.4
+876	Irene	3.9	123	Amy	3.9
+876	Irene	3.9	654	Amy	3.9
+876	Irene	3.9	456	Doris	3.9
+876	Irene	3.9	876	Irene	3.9
+987	Helen	3.7	987	Helen	3.7
+
+
+
+포인트)
+1. FROM Student S1, Student S2 로 두개의 테이블 변수를 생성
+2. self-cartesian product를 통해 GPA가 같은 두 학생의 조합을 얻어냄, 물론 자기 자신도 포함되기때문에 where S1.Sid <> S2.Sid를 추가하면 자기자신 pair는 삭제됨
+3. <>는 같지않다. 즉, =의 여집합인 "< 또는 > 이다."는 "~와 같지 않다"와 같다.
+
+where S1.Sid <> S2.Sid 추가한 결과)
+123	Amy	3.9	654	Amy	3.9
+123	Amy	3.9	456	Doris	3.9
+123	Amy	3.9	876	Irene	3.9
+456	Doris	3.9	123	Amy	3.9
+456	Doris	3.9	654	Amy	3.9
+456	Doris	3.9	876	Irene	3.9
+543	Craig	3.4	789	Gary	3.4
+567	Edward	2.9	765	Jay	2.9
+654	Amy	3.9	123	Amy	3.9
+654	Amy	3.9	456	Doris	3.9
+654	Amy	3.9	876	Irene	3.9
+765	Jay	2.9	567	Edward	2.9
+789	Gary	3.4	543	Craig	3.4
+876	Irene	3.9	123	Amy	3.9
+876	Irene	3.9	654	Amy	3.9
+876	Irene	3.9	456	Doris	3.9
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SQL 3)
+SELECT cName FROM College
+UNION
+SELECT sName from Student
+
+결과)
+Cname] <- 속성명이 Cname으로 됨
+Amy
+Berkeley
+Bob
+Cornell
+Craig
+Doris
+Edward
+Fay
+Gary
+Helen
+Irene
+Jay
+MIT
+Stanford
+
+
+포인트)
+1. SELECT cName FROM College: College에서 cName만을 추출하고 SELECT sName from Student: Student에서 sName만을 추출한다.
+두 속성(cName, sName) 모두 domain이 text이므로 Union연산이 가능하므로 Union결과 두 릴레이션의 모든 값이 합쳐져 하나의 릴레이션으로 출력된다.
+
+2. 만약 결과 릴레이션의 속성이름을 바꾸려면 피연산 대상인 릴레이션의 속성 이름을 일치시켜주면 된다.
+
+SELECT cName as name FROM College
+UNION
+SELECT sName as name from Student
+
+cName -> name, sName -> name 으로 속성이름을 rename하면 속성명이 일치되어 결과 속성이름이 cName이 아닌 name으로 바뀌게 된다.
+
+3. 그렇기에 'as' keyword는 속성이름을 바꾸는데 사용된다.
+
+4. 결과에서 이름이 알파벳순으로 정렬됨을 볼 수 있는데 이는 UNION 연산자가 기본적으로 결과를 오름차순으로 정렬하기 때문이다.
+5. 또한 UNION 연산자는 기본적으로 결과에 중복을 삭제하므로 UNION all(모든 결과를 보여줘라)를 대신 사용하면 정렬과 중복을 무시한 결과가 출력된다. 다음과 같이 말이다.
+
+SELECT cName as name FROM College
+UNION ALL
+SELECT sName as name from Student
+
+Berkeley
+Cornell
+MIT
+Stanford
+Amy
+Bob
+Craig
+Doris
+Craig
+Edward
+Amy
+Fay
+Jay
+Gary
+Irene
+Helen
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SQL 4)
+SELECT Sid From Apply where major = "CS"
+INTERSECT
+SELECT Sid FROM Apply where major = "EE";
+
+
+결과)
+Sid
+123
+345
+
+
+포인트)
+1. major가 CS인 Sid만을 추출한다. 그 다음 major가 EE인 Sid를 추출하고 두 릴레이션에서 동시에 존재하는 Sid를 교집합(intersect)를 통해 찾는다.
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SQL 5)
+SELECT Sid From Apply where major = "CS"
+EXCEPT
+SELECT Sid FROM Apply where major = "EE";
+
+결과)
+Sid
+543
+876
+987
+
+포인트)
+1. CS를 선택한 Sid에서 EE를 선택한 Sid를 빼기때문에 대학과 상관없이 CS와 EE를 지원한 적이 있는 학생은 제외되므로 CS를 지원한 학생중에 EE를 지원하지않은 학생만
+결과로 출력된다.
+2. "Except" Keyword는 차집합과 같다.
+
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
