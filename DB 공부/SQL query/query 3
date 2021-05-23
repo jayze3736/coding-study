@@ -1,0 +1,275 @@
+이번에 다뤄볼 query에 대해서 중요하게 배울 점은 EXIST와 IN의 차이를 아는 것
+참고: https://doorbw.tistory.com/222
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SQL 1)
+SELECT Sid, sName
+FROM Student
+WHERE Sid in (SELECT Sid FROM Apply WHERE major = "CS");
+
+결과)
+Sid	sName
+123	Amy
+345	Craig
+543	Craig
+876	Irene
+987	Helen
+
+포인트)
+1. 여기서 keyword "in"이 어떻게 동작하는지 살펴보자.
+첫번째로 IN이든 EXIST든 모두 뒤에 subquery가 존재해야 동작한다. 괄호 안은 Sid로 이루어진 table을 반환하며 inner query라 부르고 밖의 Sid와 sName의 테이블을 가져오라는 query는 
+outer query라고 볼 수 있다.
+
+2. 두번째로 in의 경우는 먼저 Apply에 접근하여 Apply에 major가 CS인 Apply Sid 테이블을 반환한다. 그 이후 WHERE Sid에 대해 Student의 한 레코드에 접근하여 Sid값이 Apply Sid 테이블에
+존재하면 해당 레코드를 출력한다.
+
+3. 이때 outer query의 select keyword에 의해 해당 레코드에서 Sid와 sName만을 출력한다.
+
+정리) in은 WHERE (atb) in (inner query); 형태로 작성되며 
+outer query의 From으로 반환된 table의(이때 table은 cartesian product로 생성된 결과일 수 있음)
+한 레코드에서 (atb)가 inner query에서 반환된 table에 존재하면 해당 레코드는 정상적으로 출력한다.
+
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SQL 2)
+SELECT Sid, sName
+FROM Student
+WHERE EXISTS (SELECT Sid FROM Apply WHERE major = "CS");
+
+결과)
+Sid	sName
+123	Amy
+234	Bob
+345	Craig
+456	Doris
+543	Craig
+567	Edward
+654	Amy
+678	Fay
+765	Jay
+789	Gary
+876	Irene
+987	Helen
+
+포인트)
+1. 이번에는 "EXIST" keyword가 어떻게 동작하는지 살펴보자.
+첫번째로 Exist는 Subquery가 존재해야 동작하며 WHERE 조건문과 함께 사용된다. 먼저 Student의 한 레코드에 접근한다.
+
+2. 두번째로 EXIST 뒤에 subquery의 결과(테이블)이 존재하면 해당 레코드는 정상적으로 출력된다.
+Apply에 CS로 지원한 학생이 존재하지않는다면 결과 테이블은 없으므로 Student의 모든 레코드가 출력되지않는다. 그러나 CS로 지원한 학생이 한 명이라도 존재한다면 결과 테이블이 생성되므로
+Student의 모든 레코드가 정상적으로 출력된다.
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SQL 3) -> 진짜 중요한 query
+select cName, state
+FROM College C1
+WHERE EXISTS (SELECT * from College C2
+WHERE C2.state = C1.state and C2.cName <> C1.cName);
+
+결과)
+cName	state
+Stanford	CA
+Berkeley	CA
+
+
+포인트)
+1. 사실상 위의 경우는 subquery의 결과가 table이 생성되느냐 마느냐의 경우이므로 모두 출력되거나 출력되지않거나의 경우이지만 지금 이 경우 inner query의 비교하는 조건의 결과가 상황에 
+따라 다르다.
+
+2. 첫번째로 C1 레코드를 가져온다.
+
+3. 두번째로 inner query에서 가져온 C1 레코드와 반환한 C2 table의 모든 레코드와 한번씩 조건문 (C2.state = C1.state and C2.cName <> C1.cName)을 검사한다.
+만약 참인 결과가 하나라도 존재할 경우 검사한 C1 레코드를 정상적으로 출력한다.(비교 결과가 참인 C2 레코드로 구성된 table이 존재하므로)
+
+4. cName과 state를 selection하여 출력한다.
+
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SQL 4)
+SELECT sName
+FROM Student
+WHERE Sid in (SELECT Sid FROM Apply WHERE major = "CS");
+
+결과)
+sName
+Amy
+Craig
+Craig
+Irene
+Helen
+
+포인트)
+1. Apply 테이블의 CS로 지원한 학생 id를 추출하고 Student 테이블의 id가 해당 Apply Sid 테이블에 존재하면 해당 레코드를 정상 출력한다.
+
+2. 따라서 위 query가 의미하는 뜻은 Apply에 지원을 했으며 CS로 지원한 학생 이름을 찾는 의미이다.
+(CS로 지원하지않고 지원하지도 않은 학생은 제외)
+
+3. 위의 query와 동일한 query
+SELECT DISTINCT sName, Student.Sid, major
+FROM Apply, Student
+WHERE major = "CS" and Student.Sid = Apply.Sid;
+
+그러나 sName만 따로 추출할 수 없다는 점, Cartesian product를 이용하기때문에 조합이 매우 많아져서 중복 등 처리가 불편하다는 점이 위 query와 차이를 가진다.
+사실상 EXIST 쓰는게 더 좋은 듯 깔끔하고.
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SQL 5)
+SELECT GPA
+from Student
+WHERE Sid in (SELECT Sid FROM Apply WHERE major = "CS");
+
+결과)
+GPA
+3.9
+3.5
+3.4
+3.9
+3.7
+
+
+포인트)
+1. 첫번째로 inner query로 반환되는 table은 다음과 같다.
+
+major = CS]
+Sid	cName	major	dec
+123	Stanford	CS	Y
+123	Berkeley	CS	Y
+345	Cornell	CS	Y
+987	Stanford	CS	Y
+987	Berkeley	CS	Y
+876	Stanford	CS	N
+543	MIT	CS	N
+
+->
+major = CS and select sid]
+Sid	
+123	
+123	
+345	
+987	
+987
+876	
+543
+
+2. Student에서 123, 345, 987, 876, 543에 해당하는 학생들의 GPA를 뽑는다.
+
+Student]
+Sid	sName	GPA	HS
+----------------------------> 123	Amy	3.9	1000
+234	Bob	3.6	1500
+----------------------------> 345	Craig	3.5	500
+456	Doris	3.9	1000
+----------------------------> 543	Craig	3.4	2000
+567	Edward	2.9	2000
+654	Amy	3.9	1000
+678	Fay	3.8	200
+765	Jay	2.9	1500
+789	Gary	3.4	800
+----------------------------> 876	Irene	3.9	400
+----------------------------> 987	Helen	3.7	800
+
+3.9, 3.5, 3.4, 3.9, 3.7 이 반환되는 결과가 맞다.
+
+3. 결과적으로 지원한 과가 CS인 학생들의 GPA를 조사한 데이터가 된다. 결과에서 학생의 GPA가 중복되어 출력되지않았다.
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SQL 5)
+SELECT Sid, sName
+FROM Student
+WHERE Sid in (SELECT Sid FROM Apply WHERE major = "CS")
+AND Sid not in (SELECT Sid FROM Apply WHERE major = "EE");
+
+결과)
+Sid	sName
+543	Craig
+876	Irene
+987	Helen
+
+포인트)
+1. 이 query는 다음과 동일한 query이다.
+
+SELECT Sid FROM Apply WHERE major = "CS"
+EXCEPT
+SELECT Sid FROM Apply WHERE major = "EE"
+
+Sid
+543
+876
+987
+
+2. 일단 Cartesian product가 없으므로 duplicate의 위험성이 발생하지않는 경우이며 두 조건에서 Sid를 체크한다.
+하나는 Sid in (SELECT Sid FROM Apply WHERE major = "CS") -> Student.Sid가 Apply의 CS에 지원한 Sid list에 존재하는가
+나머지는 Sid not in (SELECT Sid FROM Apply WHERE major = "EE"); -> Student.Sid가 Apply의 EE에 지원한 Sid list에 존재하지않는가
+두 개 동시에 만족하는 경우에 따라 Apply에 지원한 학생이 CS에 지원하고 EE에는 지원하지않은 레코드(Sid)만 출력하므로
+두 query가 같은 의미를 내포하고 있다.
+
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SQL 6)
+SELECT Sid, sName
+FROM Student
+WHERE Sid in (SELECT Sid FROM Apply WHERE major = "CS")
+AND not Sid in (SELECT Sid FROM Apply WHERE major = "EE");
+
+결과)
+Sid	sName
+543	Craig
+876	Irene
+987	Helen
+
+포인트)
+1. SQL 5)의 결과와 동일하다. 즉, not (atb) in 이던 (atb) not in 이던 똑같다는 의미이다.
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SQL 6) exist를 이용한 최댓값 또는 최솟값 얻기
+SELECT sName, GPA
+FROM Student S1
+WHERE NOT EXISTS (SELECT GPA FROM Student S2
+WHERE S2.GPA > S1.GPA);
+
+결과)
+sName	GPA
+Amy	3.9
+Doris	3.9
+Amy	3.9
+Irene	3.9
+
+포인트)
+1. S1의 한 레코드를 가져온다. 그 이후 그 레코드의 GPA값과 S2의 모든 레코드의 GPA값과 비교하여 S1.GPA가 S2.GPA보다 큰 경우가 존재하는지 확인한다.
+
+2. 여기서 S1과 S2에는 반드시 최댓값 최솟값이 존재하며, 두 테이블은 내용이같기때문에 비교를 할 경우 S1 레코드의 가장작은 GPA값은 S2의 모든 값보다 작거나 같아야하며 가장 큰 GPA값은
+S2의 모든 값보다 크거나 같아야한다. 따라서 가져온 S1의 레코드가 최댓값 GPA를 보유할때 S2.GPA <= S1.GPA를 만족하므로 inner query에서 반환 테이블이 생기지않으며 이는 정상출력을 의미한다.
+따라서 GPA가 가장 큰 값인 학생들을 출력하게된다.
+
+주의 SQL)
+위 query와 다음 query는 다른 결과를 가진다.
+SELECT sName, GPA
+FROM Student S1
+WHERE EXISTS (SELECT GPA FROM Student S2
+WHERE S2.GPA < S1.GPA);
+
+sName	GPA
+Amy	3.9
+Bob	3.6
+Craig	3.5
+Doris	3.9
+Craig	3.4
+Amy	3.9
+Fay	3.8
+Gary	3.4
+Irene	3.9
+Helen	3.7
+
+NOT과 부등호는 치환관계를 가지지 않는다. S1.GPA > S2.GPA인 결과가 존재하기만 하면 정상적으로 출력되므로 유일값인 최댓값 또는 최솟값을 밝힐 수 없다.
+
+최솟값의 경우)
+SELECT sName, GPA
+FROM Student S1
+WHERE NOT EXISTS (SELECT GPA FROM Student S2
+WHERE S2.GPA < S1.GPA);
+
+sName	GPA
+Edward	2.9
+Jay	2.9
+
+부등호를 반대로 써주자.
