@@ -1,0 +1,152 @@
+Student, Apply, College Table을 기반으로 query 작성
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+SQL 1)
+SELECT sName, major, S.Sid
+FROM Student S, Apply A
+WHERE S.Sid = A.Sid
+
+결과)
+Amy	CS	123
+Amy	EE	123
+Amy	CS	123
+Amy	EE	123
+Bob	biology	234
+Craig	bioengineering	345
+Craig	bioengineering	345
+Craig	CS	345
+Craig	EE	345
+Fay	history	678
+Helen	CS	987
+Helen	CS	987
+Irene	CS	876
+Irene	biology	876
+Irene	marine biology	876
+Jay	history	765
+Jay	history	765
+Jay	psychology	765
+Craig	CS	543
+
+포인트)
+1. Sid 속성은 Student에도, Apply에도 존재하기때문에 결과로 출력하는 Sid가 둘중 어느 테이블의 속성인지를 밝혀야한다. S.Sid 또는 A.Sid로 작성하지않고 Sid로 출력하라고
+명령하면, 오류가 발생한다.
+2. From에 테이블이 2개이상 들어가면 이는 Cartesian Product를 하는 것과 같다. S와 A에 공통 속성은 Sid밖에 없으므로 조건 S.Sid = A.Sid에 의해 Cartesian Product는 마치
+Join을 취하는 것과 같다.
+3. 결과가 보여주는 것은 각 학생의 정보와 Apply의 정보(cName, major, dec) 를 연결한 데이터와 같다. 예를 들면
+
+Amy	CS	123
+Amy	EE	123
+Amy	CS	123
+Amy	EE	123
+에서 중복값이 존재하지만 이는 실제로 서로 다른 학교에 지원함을 의미한다.
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+SQL 2)
+SELECT sName, GPA, dec, major, cName
+from Student, Apply
+WHERE Student.Sid = Apply.Sid
+AND HS < 1000 and major = "CS" and cName = "Stanford"
+
+결과)
+Helen	3.7	Y	CS	Stanford
+Irene	3.9	N	CS	Stanford
+
+포인트) 
+Where을 사용하여 조건에 부합하는 테이블을 얻는다. 조심해야할 것은 query를 작성할때 문자를 잘못적지 않도록 주의 ex) stanford -> standford
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+SQL 3)
+SELECT College.cName, Sid
+FROM College, Apply
+WHERE College.cName = Apply.cName
+AND enr > 20000 and major = "CS";
+
+결과)
+Berkeley	123
+Cornell	345
+Berkeley	987
+
+포인트)
+위와 마찬가지로 cName만이 두 테이블의 공통속성이므로 join과 같은 결과를 얻게됨
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+SQL 4)
+SELECT S.Sid, sName, GPA, A.cName, enr
+FROM Student S, College C, Apply A
+WHERE A.Sid = S.Sid AND C.cName = A.cName
+ORDER by GPA DESC , enr
+
+결과)
+876	Irene	3.9	MIT	10000
+876	Irene	3.9	MIT	10000
+123	Amy	3.9	Stanford	15000
+123	Amy	3.9	Stanford	15000
+876	Irene	3.9	Stanford	15000
+123	Amy	3.9	Cornell	21000
+123	Amy	3.9	Berkeley	35000
+678	Fay	3.8	Stanford	15000
+987	Helen	3.7	Stanford	15000
+987	Helen	3.7	Berkeley	35000
+234	Bob	3.6	Berkeley	35000
+345	Craig	3.5	MIT	10000
+345	Craig	3.5	Cornell	21000
+345	Craig	3.5	Cornell	21000
+345	Craig	3.5	Cornell	21000
+543	Craig	3.4	MIT	10000
+765	Jay	2.9	Stanford	15000
+765	Jay	2.9	Cornell	21000
+765	Jay	2.9	Cornell	21000
+
+포인트)
+1. 세가지 table을 Cartesian Product하되, where문에 의해 join을 한것과 같은 효과를 얻는다. 따라서 학생 info에 지원한 학교와 학교의 정보가 매칭된 결과를 얻는다.
+2. Order는 결과 table의 속성값을 정렬하는 기능을 맡는다. 오름차순일 경우 Order (속성 명), 내림차순일 경우 Order by (속성 명) desc 으로 적는다.
+3. ORDER by GPA DESC , enr 의 경우 결과 테이블을 1 순위로 GPA를 내림차순으로 정렬하고 2 순위로 enr를 오름차순으로 정렬한다.
+예를 들어 GPA가 같은 두 튜플을 정렬할때 2순위인 enr를 오름차순으로 정렬한다.
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+SQL 4)
+SELECT Sid, major
+from Apply
+WHERE major like "%bio%";
+
+결과)
+234	biology
+345	bioengineering
+345	bioengineering
+876	biology
+876	marine biology
+
+포인트)
+"...bio..."라는 문자열이 들어가있는 major를 찾는다. like는 (대상 1) like (대상 2), (대상 2)을 (대상 1)에 비교하거나 동일하게 만들때 사용한다.
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+SQL 5)
+SELECT Sid, sName, GPA, HS, GPA*(HS/1000) as ScaledGPA
+from Student
+
+결과)
+123	Amy	3.9	1000	3.9
+234	Bob	3.6	1500	3.6
+345	Craig	3.5	500	0.0
+456	Doris	3.9	1000	3.9
+543	Craig	3.4	2000	6.8
+567	Edward	2.9	2000	5.8
+654	Amy	3.9	1000	3.9
+678	Fay	3.8	200	0.0
+765	Jay	2.9	1500	2.9
+789	Gary	3.4	800	0.0
+876	Irene	3.9	400	0.0
+987	Helen	3.7	800	0.0
+
+포인트)
+1. 결과 테이블에 새로운 속성을 추가할 수 있다. 각 튜플의 GPA*(HS/1000)를 게산하여 새로운 속성으로 추가하고 값을 출력한다.
+2. GPA*(HS/1000) as ScaledGPA: 추가된 GPA*(HS/1000) 속성의 이름을 ScaledGPA로 바꾼다.
+
+
