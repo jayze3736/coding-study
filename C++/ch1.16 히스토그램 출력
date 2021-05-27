@@ -1,0 +1,56 @@
+#include <iostream>
+#include <string>
+using namespace std;
+
+// string과 cstring의 차이?, const char *는 무엇? - strcmp
+
+int main() {
+
+	// 아스키코드를 이용한 히스토그램 출력하기
+	// 엔터 키는 13번, 공백문자는 32번
+	
+	cout << "영문 텍스트를 입력하세요. 히스토그램을 그립니다." << endl;
+	cout << "텍스트의 끝은 ;입니다. 10000개까지 가능합니다." << endl;
+
+	char c[10000];
+	cin.getline(c, 10001, ';');
+	int cnt = 0;
+	for (int i = 0;  i< 10000; i++)
+	{
+		
+		
+		if (c[i] == '\0')
+			break;
+		else if (c[i] == ' ' or c[i] == '\n')
+		{ }
+		else
+		{
+			cnt++;
+		}
+	}
+	cout << "총 알파벳의 개수 " << cnt << endl << endl;
+	
+
+	for (int i = 0; i < 26; i++) {
+		int cnt = 0;
+
+		for (int j = 0; j < 10000; j++) {
+			if (tolower(c[j]) == (char)('a' + i))
+				cnt++;
+		}
+
+		cout << (char)('a' + i) << " (" << cnt << ")   :";
+
+		for (int k = 0; k < cnt; k++)
+				cout << "*";
+		cout << endl;
+
+	}
+	
+
+
+}
+
+
+
+재밌어서 올려봄
