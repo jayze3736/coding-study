@@ -4,37 +4,97 @@ https://stackoverflow.com/questions/13168929/sqlite-syntax-for-all
 
 # from/select 구문의 subquery 정리
 
+# JOIN - inner join과 outer join
+inner join: 교집합을 얻는 연산 - natural join, theta join
+outer join: join연산을 취할때 두 테이블의 합집합을 얻는 연산 - left,right,full join
+
 Advice) 항상 주의해야할 경우는 두 테이블을 Cartesian Product할때 발생하는 필요 이외의 튜플들로 인해 결과가 달라지는 경우이다. 웬만해서 두개의 테이블을 하나로 엮기보다 
 해당 구문을 엮지 않는 방식으로 바꿔서 쓰는게 낫지 않을까 생각한다.
 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-SQL )
-
+SQL 1)
+SELECT *
+FROM (SELECT Sid, sName, GPA, GPA*(HS/1000.0) as ScaledGPA
+FROM Student) G
+WHERE abs(G.scaledGPA - G.GPA) > 1.0;
 
 결과)
-
+Sid	sName	GPA	ScaledGPA
+234	Bob	3.6	5.4
+345	Craig	3.5	1.75
+543	Craig	3.4	6.8
+567	Edward	2.9	5.8
+678	Fay	3.8	0.76
+765	Jay	2.9	4.35
+876	Irene	3.9	1.56
 
 포인트)
+1. raw table인 Student 테이블에서 GPA*(HS/1000)을 계산하여 새로운 필드로 추가하고 ScaledGPA로 이름 지어 inner query의 결과 table을 얻는다.
+2. 이 ScaledGPA값을 다시 이용하기위해 결과 table을 참조해야하므로 테이블 변수 G로 선언한다.
+3. G를 참조하여 ScaledGPA값과 GPA값의 차이가 1.0 이상인 튜플들로 구성된 테이블을 얻는다.
+
+4. raw table -> inner query로 새로운 필드를 추가한 테이블을 얻음 -> 해당 테이블에서 새로이 추가한 필드를 이용하여 필터링 수행 -> 결과 get
 
 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-SQL )
+SQL 2)
+SELECT College.cName, state. GPA
+FROM College, Apply, Student
+WHERE College.cName = Apply.cName
+	AND Apply.Sid = Student.Sid
+	AND GPA >= ALL
+				(SELECT GPA FROM Student, Apply
+				WHERE Student.Sid = Apply.Sid
+				AND Apply.cName = College.cName);
+
+
+<--equal-->
+
+
+
+SELECT DISTINCT *
+FROM (SELECT C.cName as cName, state, GPA
+FROM College C, Apply A, Student S WHERE C.cName = A.cName
+	AND A.Sid = S.Sid) G
+WHERE NOT EXISTS (SELECT * FROM Apply, Student WHERE 
+Student.Sid = Apply.Sid 
+AND G.cName = Apply.cName 
+AND G.GPA < Student.GPA)
+
 
 
 결과)
-
+cName	state	GPA
+Stanford	CA	3.9
+Berkeley	CA	3.9
+Cornell	NY	3.9
+MIT	MA	3.9
 
 포인트)
+1. 위 query는 all을 사용한 경우, 그러나 sqlite에서는 all을 사용하지않으므로 아래 query처럼 대신 query를 작성할 수 있다. 위 query가 의미하는 바는 모든 대학의 지원한 학생의 GPA 최댓값을
+나타내는 query이다.
+2. not exist를 이용하여 최댓값을 추출하는 query를 연습했듯이 이를 이용하여 query를 재작성했다.
+
 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-SQL )
-
+SQL 3)
+SELECT cName, state
+(SELECT DISTINCT sName
+FROM Apply, Student
+WHERE College.cName = Apply.cName
+	AND Apply.Sid = Student.Sid) as sName
+FROM College;
 
 결과)
-
+ERROR
 
 포인트)
+새로운 필드로 sName을 추가하여 테이블을 출력하려 했다. 하지만 subquery의 결과(sName)가 하나의 값이 아니라 하나의 table이므로 에러가 발생한다.
 
+cName state sName
+(data) (data) (table)
+
+위 같이 하나의 레코드에 table이 필드값으로 들어가는 것은 불가능하다. 무조건 필드는 값이 하나로 결정되어야한다.
 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 SQL )
