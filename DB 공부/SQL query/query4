@@ -1,4 +1,7 @@
-# 저번에 정리하지 못했던 Where 구문의 subquery
+# 저번에 정리하지 못했던 Where 구문의 subquery:
+all이라는 연산자가 sqlite에는 존재하지 않나보다. 
+https://stackoverflow.com/questions/13168929/sqlite-syntax-for-all
+
 # from/select 구문의 subquery 정리
 
 Advice) 항상 주의해야할 경우는 두 테이블을 Cartesian Product할때 발생하는 필요 이외의 튜플들로 인해 결과가 달라지는 경우이다. 웬만해서 두개의 테이블을 하나로 엮기보다 
