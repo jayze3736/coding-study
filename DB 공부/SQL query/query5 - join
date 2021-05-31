@@ -1,0 +1,419 @@
+# JOIN - inner join과 outer join
+inner join: 교집합을 얻는 연산 - natural join, theta join
+outer join: join연산을 취할때 두 테이블의 합집합을 얻는 연산 - left,right,full join
+
+where로 join 역할을 수행할 수 있는데, join 연산을 사용하는 이유:
+query processor에게 같은 의미를 가지고 가장 빠른 쿼리문을 찾아내도록 힌트를 제시하기 위해 사용한다.
+
+using(atb)를 사용하면 원래는 결과에 분리되어 나타내었던 두 테이블의 공통 atb가 하나로 통합되어 사용된다.
+공통 atb가 예를 들어 Sid이고 Student와 Apply를 join하면 원래는 결과 테이블에서 Student.Sid와 Apply.Sid를 구분하여 나타내지만 using(sid)를 사용하면 Student.Sid와 Apply.Sid
+가 Sid 하나로 통합된다. natural join을 사용하는 경우에도 하나로 통합된다.
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SQL 1)
+SELECT DISTINCT sName, major
+FROM Student inner JOIN Apply
+on Student.Sid = Apply.Sid
+
+결과)
+sName	major
+Amy	CS
+Amy	EE
+Bob	biology
+Craig	bioengineering
+Craig	CS
+Craig	EE
+Fay	history
+Helen	CS
+Irene	CS
+Irene	biology
+Irene	marine biology
+Jay	history
+Jay	psychology
+
+포인트)
+1. Apply와 Student의 정보를 취합하는 쿼리이다. inner join은 (table 1) inner join (table 2) on (condition) 형태로 사용한다. 이때 inner는 생략이 가능하다.
+
+2. on의 조건대로 join연산을 취한다.
+예를 들어, 
+
+-------------
+T1          
+atb1 atb2   
+a	   b      
+b	   c      
+-------------
+
+-------------
+T2
+atb1 atb2
+c	   b
+b	   a
+-------------
+
+inner join
+on T1.atb2 = T2.atb2
+
+atb1.T1	atb2	atb1.T1
+a	      b     c
+
+
+inner join
+on T1.atb1 = T2.atb1
+
+atb2.T1	atb1	atb2.T2
+c	      b   	a
+
+3. 다음 query와 동일한 결과를 얻는다.
+SELECT DISTINCT sName, major
+FROM Student, Apply
+WHERE Student.Sid = Apply.Sid
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SQL 2)
+SELECT sName, GPA
+FROM Student JOIN Apply
+WHERE Student.Sid = Apply.Sid
+	AND HS < 1000 and major = "CS" and cName = "Stanford";
+
+
+결과)
+sName	GPA
+Helen	3.7
+Irene	3.9
+
+
+포인트)
+join 연산을 취하고 특정 조건으로 필터링하는 경우를 보여준다.
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SQL 3)
+SELECT Apply.Sid, sName, GPA, Apply.cName, enr
+FROM Apply INNER JOIN Student JOIN College
+on Apply.Sid = Student.Sid AND Apply.cName = College.cName
+
+결과)
+Sid	sName	GPA	cName	enr
+123	Amy	3.9	Stanford	15000
+123	Amy	3.9	Stanford	15000
+123	Amy	3.9	Berkeley	35000
+123	Amy	3.9	Cornell	21000
+234	Bob	3.6	Berkeley	35000
+345	Craig	3.5	MIT	10000
+345	Craig	3.5	Cornell	21000
+345	Craig	3.5	Cornell	21000
+345	Craig	3.5	Cornell	21000
+678	Fay	3.8	Stanford	15000
+987	Helen	3.7	Stanford	15000
+987	Helen	3.7	Berkeley	35000
+876	Irene	3.9	Stanford	15000
+876	Irene	3.9	MIT	10000
+876	Irene	3.9	MIT	10000
+765	Jay	2.9	Stanford	15000
+765	Jay	2.9	Cornell	21000
+765	Jay	2.9	Cornell	21000
+543	Craig	3.4	MIT	10000
+
+포인트)
+1. 세개 이상의 테이블을 JOIN할때는 (table 1) join (table 2) join (table 3) ... (join) (table n) 형태로 구문을 작성해야한다.
+
+2. join연산을 취했다고 해서 두 테이블의 공통 속성이 하나로 통합되지않는다. Apply.Sid와 Student.Sid는 join 연산을 취해도 Sid로 하나로 통합되지않는다. 따라서
+결과 테이블은 Apply.Sid와 Student.Sid를 구분해놓기 때문에 Sid에 접근할땐 둘 중하나의 참조를 명시해야한다.
+
+참고. 이때 db 프로그램에 따라 JOIN 연산에 규칙이 있을 수 있다. sqlite는 위처럼 가능하며 join 연산의 피연산자가 항상 2개의 테이블로 제한되어있는 경우가 있다. 따라서
+((table 1) join (table 2) on (cond) ) join (table 3) on (cond) -> 한번에 모든 table을 join 연산하는 것이 불가능하다.
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SQL 4)
+SELECT DISTINCT sName, major
+FROM Student NATURAL JOIN Apply;
+
+결과)
+sName	major
+Amy	CS
+Amy	EE
+Bob	biology
+Craig	bioengineering
+Craig	CS
+Craig	EE
+Fay	history
+Helen	CS
+Irene	CS
+Irene	biology
+Irene	marine biology
+Jay	history
+Jay	psychology
+
+포인트)
+1. natural join을 사용하는 예제, natural 키워드를 명시적으로 작성해야하며 natural join은 'on' 조건없이 Student와 Apply의 모든 공통 속성을 대상으로 join연산을 취한다.
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SQL 5)
+SELECT DISTINCT sName, major
+FROM Student JOIN Apply USING(Sid);
+
+결과)
+SQL 4 쿼리와 결과 동일.
+
+포인트)
+1. (중요) USING을 사용하면 명시적으로 어떤 속성에 대해 JOIN연산을 취할지 나타낼 수 있다. 
+2. JOIN의 대상인 테이블들의 속성값이 많고, join을 취해야하는 속성이 여러개일때 사용하기에 적절하다. (괄호안에 속성명만 적어주면 되니까)
+3. natural은 함께사용할 수 없다.
+4. natural join과 다르게 안전하게 join연산을 취할 수 있다. -> 내가 작성한 테이블의 속성명이 잘못되었거나 무언가 잘못되었는지 디버깅이 가능하다는 뜻이다.
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SQL 6) - self join에 관해서, 중요한 query
+SELECT S1.Sid, S1.sName, S1.GPA, S2.Sid, S2.sName, S2.GPA
+FROM Student S1 join Student S2 using(GPA)
+WHERE S1.Sid < S2.Sid
+
+
+결과)
+Sid	sName	GPA	Sid	sName	GPA
+123	Amy	3.9	654	Amy	3.9
+123	Amy	3.9	456	Doris	3.9
+123	Amy	3.9	876	Irene	3.9
+456	Doris	3.9	654	Amy	3.9
+456	Doris	3.9	876	Irene	3.9
+543	Craig	3.4	789	Gary	3.4
+567	Edward	2.9	765	Jay	2.9
+654	Amy	3.9	876	Irene	3.9
+
+포인트)
+1. 위 쿼리는 GPA가 같은 학생 페어를 구하는 쿼리이다. 
+2. using과 on은 같이 사용하지못하며, 조건으로 필터링을할때는 where을 사용해야한다.
+3. self-join이므로 a, b 두 레코드가 있을때 a-b, a-a, b-b, b-a가 생긴다. 하지만 페어는 순서에 상관없으며 자기 자신과의 페어 또한 의미가 없으므로 S1.Sid < S2.Sid
+조건으로 순서가 뒤바뀌는 경우를 방지하고 두 ID가 같지않는 페어를 생성하도록 한다.
+
+4. 헷갈릴 수 있는 점: table변수로 선언하여 두개의 Student 테이블을 S1과 S2로 나타냈다. 그러나 실제 S1과 S2의 table의 속성명은 Student와 마찬가지로
+Sid, Sname, GPA 이므로 using의 괄호에는 GPA를 써줘야한다. 여기서 아이러니한 점은 S1과 S2의 속성명이 Sid, SName, GPA인데, 실제 필드에 접근할때는 ambiguity때문에
+S1. 또는 S2. 처럼 테이블 변수명으로 접근해야한다는 점이다.
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+여기부터는 outer join 합집합을 얻는 연산
+SQL 6)
+SELECT sName, Sid, cName, major
+FROM Student LEFT OUTER JOIN Apply USING(Sid);
+
+결과)
+sName	Sid	cName	major
+Amy	123	Berkeley	CS
+Amy	123	Cornell	EE
+Amy	123	Stanford	CS
+Amy	123	Stanford	EE
+Bob	234	Berkeley	biology
+Craig	345	Cornell	CS
+Craig	345	Cornell	EE
+Craig	345	Cornell	bioengineering
+Craig	345	MIT	bioengineering
+Doris	456		-
+Craig	543	MIT	CS
+Edward	567		-
+Amy	654		-
+Fay	678	Stanford	history
+Jay	765	Cornell	history
+Jay	765	Cornell	psychology
+Jay	765	Stanford	history
+Gary	789		-
+Irene	876	MIT	biology
+Irene	876	MIT	marine biology
+Irene	876	Stanford	CS
+Helen	987	Berkeley	CS
+Helen	987	Stanford	CS
+
+포인트)
+1. left outer join은 (table L) left outer join (table R) 형태로 사용하며 L에 있는 레코드가 R과 join 연산을 취할 수 없는 경우, R의 레코드값을 모두 NULL로 대입하여 해당 레코드와
+결합하여 결과를 출력한다. 
+여기서 포인트는 L의 모든 레코드가 최소한 한번씩은 출력된다. NULL이 될 수 있는 것은 R 자리의 레코드이다.
+
+2. left outer join은 on과 함께 사용불가능하다. 오로지 (table L) left outer join (table R) using (atb) 또는 (table L) natural left outer join (table R) 형태로 사용해야한다.
+
+3. using과 natural의 결과테이블은 두 테이블의 공통속성을 하나의 속성으로 통합하여 출력하므로 필드에 접근할때 Sid를 써주는 모습이 보인다.(SELECT sName, Sid, cName, major)
+
+4. 해당 쿼리는 지원자들과 지원하지않은 학생들까지 포함하여 하나의 테이블로 출력하는 쿼리이다.
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SQL 7)
+SELECT sName, Student.Sid, cName, major
+FROM Student, Apply
+WHERE Student.Sid = Apply.Sid
+UNION
+SELECT sName, Sid, NULL, NULL
+FROM Student
+WHERE Sid not in (SELECT Sid from Apply);
+
+결과)
+sName	Sid	cName	major
+Amy	123	Berkeley	CS
+Amy	123	Cornell	EE
+Amy	123	Stanford	CS
+Amy	123	Stanford	EE
+Amy	654		-
+Bob	234	Berkeley	biology
+Craig	345	Cornell	CS
+Craig	345	Cornell	EE
+Craig	345	Cornell	bioengineering
+Craig	345	MIT	bioengineering
+Craig	543	MIT	CS
+Doris	456		-
+Edward	567		-
+Fay	678	Stanford	history
+Gary	789		-
+Helen	987	Berkeley	CS
+Helen	987	Stanford	CS
+Irene	876	MIT	biology
+Irene	876	MIT	marine biology
+Irene	876	Stanford	CS
+Jay	765	Cornell	history
+Jay	765	Cornell	psychology
+Jay	765	Stanford	history
+
+포인트)
+1. SQL 6과 동일한 의미의 쿼리이다. 지원한 학생들의 정보와 지원하지 않은 학생들의 Student info에서 NULL값을 새로이 추가하여 cName과 major 필드의 값을 NULL로 대체하고
+UNION을 사용하여 지원한 학생, 그렇지않은 학생들의 모든 정보를 취합한 결과를 얻는다.
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SQL 8)
+SELECT sName, Sid, cName, major
+FROM Student RIGHT OUTER JOIN Apply
+USING(Sid);
+
+결과)
+ERROR - RIGHT and FULL OUTER JOINs are not currently supported
+
+포인트)
+1. RIGHT과 FULL outer join은 sqlite에서 지원하지않는다. 즉, left join만으로 right와 full join 기능을 구현할 수 있다.
+
+right의 경우
+(table 1) right outer join (table 2)
+=
+(table 2) left outer join (table 1)과 동일하며
+
+full의 경우
+(table 1) full outer join (table 2)
+=
+(table 1) left outer join (table 2)
+UNION
+(table 2) left outer join (table 1)
+이다.
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SQL 9)
+INSERT INTO Apply VALUES(321, "MIT", "history", "N");
+INSERT INTO Apply VALUES(321, "MIT", "psychology", "Y");
+
+----------------------------------
+SELECT sName, Sid, cName, major
+FROM Student left OUTER JOIN Apply USING(Sid)
+UNION
+SELECT sName, Sid, cName, major
+FROM Apply left OUTER JOIN Student USING(Sid)
+
+
+결과)
+sName	Sid	cName	major
+-	321	MIT	history
+-	321	MIT	psychology
+Amy	123	Berkeley	CS
+Amy	123	Cornell	EE
+Amy	123	Stanford	CS
+Amy	123	Stanford	EE
+Amy	654		-
+Bob	234	Berkeley	biology
+Craig	345	Cornell	CS
+Craig	345	Cornell	EE
+Craig	345	Cornell	bioengineering
+Craig	345	MIT	bioengineering
+Craig	543	MIT	CS
+Doris	456		-
+Edward	567		-
+Fay	678	Stanford	history
+Gary	789		-
+Helen	987	Berkeley	CS
+Helen	987	Stanford	CS
+Irene	876	MIT	biology
+Irene	876	MIT	marine biology
+Irene	876	Stanford	CS
+Jay	765	Cornell	history
+Jay	765	Cornell	psychology
+Jay	765	Stanford	history
+
+포인트)
+1. 지원한 학생 U (Student INFO + NULL) U 지원한 학생 U (NULL + Apply INFO)
+= 지원한 학생 U (Student INFO + NULL) U (NULL + Apply INFO)
+즉, 기본적으로 JOIN 연산이 가능한 결과 + (오른쪽 table을 NULL로 정한 JOIN 연산 레코드) + (왼쪽 table을 NULL로 한 JOIN 연산 레코드)
+가 full join의 결과가 된다.
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SQL 10)
+OUTER JOIN은 결합 법칙 ( (A + B) + C = A + (B + C) ) 가 성립하지않으므로 2개 이상의 table을 outer join할때 순서에 신경 써야한다.
+select A,B,C
+from T1 natural left outer join (T2 natural left outer join T3)
+
+CREATE TABLE T1(A INT, B INT);
+CREATE TABLE T2(B INT, C INT);
+CREATE TABLE T3(A INT, C INT);
+INSERT INTO T1 VALUES(1,2);
+INSERT INTO T2 VALUES(2,3);
+INSERT INTO T3 VALUES(4,5);
+
+T1
+A	B
+1	2
+
+T2
+B	C
+2	3
+
+T3
+A	C
+4	5
+
+이후
+
+VER1)
+SELECT A,B,C
+FROM T1 NATURAL left outer join 
+(SELECT A,B,C FROM T2 NATURAL left outer join T3 UNION
+SELECT A,B,C FROM T3 NATURAL left outer join T2)
+UNION
+SELECT A,B,C
+FROM (SELECT A,B,C FROM T2 NATURAL left outer join T3 UNION
+SELECT A,B,C FROM T3 NATURAL left outer join T2) 
+NATURAL left outer join 
+T1;
+
+VER2)
+
+SELECT A,B,C
+FROM (SELECT A,B,C FROM T2 NATURAL left outer join T3 UNION
+SELECT A,B,C FROM T3 NATURAL left outer join T2) 
+NATURAL left outer join T1
+UNION
+SELECT A,B,C
+FROM T1 NATURAL left outer join 
+(SELECT A,B,C FROM T2 NATURAL left outer join T3 UNION
+SELECT A,B,C FROM T3 NATURAL left outer join T2);
+
+결과)
+Ver 1)
+A	B	C
+	2	3
+1	2	
+4		5
+
+Ver 2)
+A	B	C
+	2	3
+1	2	
+4		5
+
+
+포인트)
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
