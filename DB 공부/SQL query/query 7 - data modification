@@ -1,0 +1,40 @@
+# insert ,create , delete , update 데이터를 생성하고 제거하고 수정하는 키워드 사용법을 정리한다.
+
+# insert를 사용하는데 두 가지 형태가 존재한다.
+
+1. insert INTO (TABLE) VALUES(...)
+  TABLE에 하나의 튜플값을 삽입할때 사용한다.
+  
+2. insert INTO (TABLE) (SUB-QUERY)
+  Sub-query에서 반환되는 테이블이 그대로 대상 테이블로 들어가도록 할 수 있다.
+  
+  
+# create
+
+CREATE TABLE "테이블 명" (type atb1, type atb2, type atb3...) 형태로 테이블을 생성한다
+
+# delete
+
+delete from (테이블 명)
+where (condition) or (sub-query)
+
+테이블 명에 해당하는 테이블의 레코드를 삭제한다. condition을 만족하는 튜플을 찾아 삭제하거나 sub-query에서 반환하는 레코드와 일치하는 경우를 찾아 삭제한다.
+테이블에서 condition을 만족하는 경우가 없거나 sub-query의 일부 튜플이 해당 테이블에 존재하지않아도 정상적으로 실행되며 조건과 일치하는 튜플만 테이블에서 삭제한다.
+
+# update
+
+update (테이블 명)
+set atb = (val to change)
+where (condition)
+
+테이블에서 where 조건이 참인 튜플의 atb 필드의 값을 val to change로 바꾼다. 이때 where절이 없으면 모든 튜플에 대해서 값을 바꾼다.
+
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SQL 1)
+
+
+포인트)
+
+
+결과)
