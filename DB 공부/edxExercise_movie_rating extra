@@ -43,7 +43,24 @@ ORDER by st DESC, title
 
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ANS 4)
+ANS 4) 어려운 문제
+- Find the names of all reviewers who have contributed three or more ratings. (As an extra challenge, try writing the query without HAVING or without COUNT.)
+
+SELECT name
+FROM Reviewer
+WHERE rID in (SELECT DISTINCT R1.rID
+FROM Rating R1, Rating R2, Rating R3
+WHERE R1.rID = R2.rID AND R2.rID = R3.rID
+AND not (R1.mID = R2.mID AND R1.ratingDate = R2.ratingDate)
+AND not (R2.mID = R3.mID AND R2.ratingDate = R3.ratingDate)
+AND not (R1.mID = R3.mID AND R1.ratingDate = R3.ratingDate))
+
+방법:
+만약에 2번밖에 평가를 하지않은 학생들의 평가 레코드를 A,B 라고 하자. rID가 같도록 삼중조인을 취하면 하나의 rID와 연관 있는 평가레코드 3개의 조합을 취하는 것과 같다.
+그러나 2번밖에 평가하지않은 학생들의 경우, _ - _ - _ 조합에서 레코드의 중복을 피할 수 없다.( A - B - C 가 불가능)
+3번 이상 평가한 학생의 경우 A - B - C의 조합이 가능하므로
+이를 이용하여 count 없이도 3번 이상 평가한 사람들을 찾을 수 있다.
+따라서 삼중 조인을 취했을때 레코드 중복이 존재하는 경우들을 모두 제외하면 답을 찾을 수 있다.
 
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
